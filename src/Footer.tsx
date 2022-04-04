@@ -9,7 +9,8 @@ const buttonStyle = {
     fontWeight:"600",
     borderRadius:"1vw",
     boxShadow: "5px 5px 15px -5px #000000",
-    border:"0px"
+    border:"0px",
+    cursor: "pointer"
 }
 const Footer = (props:any) => {
     return(

@@ -36,6 +36,7 @@ const getStats = ():Stats=> {
   }
 }
 
+export enum RESULT {UNKNOWN, WON, LOST, DRAW};
 const stats = getStats();
 
 const initialState = {
@@ -52,7 +53,7 @@ type State = Readonly<typeof initialState>;
 
 function App() {
   const [state, setState] = useState(initialState);
-
+  const [result, setResult] = useState(RESULT.UNKNOWN);
   const nextTurn = () => {
     setState({score:state.score, turn: state.turn=="o"?"x":"o", game:state.game, count:state.count+1, stats: state.stats, isPlaying:true});
   }
@@ -84,6 +85,7 @@ function App() {
       isPlaying:true
     }
     setState({score:emptyState.score, turn: emptyState.turn, game:emptyState.game, count:emptyState.count, stats:getStats, isPlaying: emptyState.isPlaying});
+    setResult(RESULT.UNKNOWN)
   }
 
   const setSpace = (space:number) => {
@@ -91,14 +93,14 @@ function App() {
     const newGame = state.game;
     newGame[space] = state.turn;
     const check = checkWin();
-    console.log(check)
     if(check[0]){
-      if(check[1] == "x") updateStats("w");
-      else if (check[1] == "o") updateStats("l");
+      if(check[1] == "x") {updateStats("w");setResult(RESULT.WON)}
+      else if (check[1] == "o") {updateStats("l");setResult(RESULT.LOST)}
       setState({score:state.score, turn: state.turn, game:state.game, count:state.count, stats:getStats, isPlaying: false});
     }
     else if(state.count>=8){
       updateStats("d");
+      setResult(RESULT.DRAW)
       setState({score:state.score, turn: state.turn, game:state.game, count:state.count, stats:getStats, isPlaying: false});
     }
     else{
@@ -108,7 +110,7 @@ function App() {
 
   return (
     <div style={appStyle as React.CSSProperties} className="App">
-      <Header stats={state.stats}/>
+      <Header stats={state.stats} turn = {[state.turn, result]}/>
       <Board gameState={state} nextTurn={nextTurn} setSpace={setSpace}/>
       <Footer visibility={state.isPlaying} replay={restartGame}/>
     </div>

@@ -11,14 +11,17 @@ const rowStyle = {
 const Board = (props:any) => {
     const [size, setSize] = useState(9);
 
-    const playTurn = (key:number) => {
-        props.setSpace(key);
+    const playTurn = (key:number, canPlay:boolean) => {
+        if(canPlay){
+            props.setSpace(key);
+        }
+        
     }
     return(
         <div style={rowStyle as React.CSSProperties}>
             {
                 props.gameState.game.map((space:any, key:any)=>( 
-                    <Space key={key} onClick ={()=>playTurn(key)} content={space}/>
+                    <Space key={key} onClick ={()=>playTurn(key, props.gameState.isPlaying)} content={space}/>
                 ))
             }
         </div>  
