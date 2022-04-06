@@ -21,7 +21,7 @@ const Board = (props:any) => {
         <div style={rowStyle as React.CSSProperties}>
             {
                 props.gameState.game.map((space:any, key:any)=>( 
-                    <Space key={key} onClick ={()=>playTurn(key, props.gameState.isPlaying)} content={space}/>
+                    <Space key={key} onClick ={()=>props.gameState.turn=="x"?playTurn(key, props.gameState.isPlaying):null} content={space}/>
                 ))
             }
         </div>  

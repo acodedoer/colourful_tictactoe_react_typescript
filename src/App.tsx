@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import logo from './logo.svg';
 import Board from './Board';
 import Header from './Header';
@@ -52,6 +52,7 @@ const initialState = {
 type State = Readonly<typeof initialState>;
 
 function App() {
+
   const [state, setState] = useState(initialState);
   const [result, setResult] = useState(RESULT.UNKNOWN);
   const nextTurn = () => {
@@ -108,6 +109,19 @@ function App() {
     }
   }
 
+  useEffect(()=> {
+    if(state.turn=="o"){
+      let valid = false;
+      while (!valid){
+        let box = Math.floor(Math.random()*10);
+        if(state.game[box]==""){
+          valid = true;
+          setTimeout(()=>setSpace(box),Math.random()* 1000);
+          break
+        }
+      }
+    }
+  },[state.turn])
   return (
     <div style={appStyle as React.CSSProperties} className="App">
       <Header stats={state.stats} turn = {[state.turn, result]}/>
