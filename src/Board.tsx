@@ -1,4 +1,3 @@
-import React, {useState} from "react";
 import Space from './Space';
 
 const rowStyle = {
@@ -8,20 +7,18 @@ const rowStyle = {
     height:"36vw"
 }
 
-const Board = (props:any) => {
-    const [size, setSize] = useState(9);
-
-    const playTurn = (key:number, canPlay:boolean) => {
+const Board:React.FC<any> = ({board, setSpace, canPlay}) => {
+    const playTurn = (key:number) => {
         if(canPlay){
-            props.setSpace(key);
+            setSpace(key);
         }
         
     }
     return(
         <div style={rowStyle as React.CSSProperties}>
             {
-                props.gameState.game.map((space:any, key:any)=>( 
-                    <Space key={key} onClick ={()=>props.gameState.turn=="x"?playTurn(key, props.gameState.isPlaying):null} content={space}/>
+                board.map((space:any, key:any)=>( 
+                    <Space key={key} onClick ={()=>canPlay?playTurn(key):null} content={space}/>
                 ))
             }
         </div>  

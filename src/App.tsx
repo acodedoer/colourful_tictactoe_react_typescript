@@ -1,8 +1,7 @@
-import React, {useEffect,useState} from 'react';
+import React, {useCallback, useEffect,useReducer,useState} from 'react';
 import Board from './Board';
 import Header from './Header';
 import Footer from './Footer';
-import Stats from './Stats';
 
 const appStyle = {
   width:"100vw",
@@ -13,15 +12,12 @@ const appStyle = {
   alignItems:"center"
 }
 
-interface Stats {
-  [w:string]: number,
-  [d:string]:number,
-  [l:string]: number
+interface statObject {
+  [W:string]: number, //index of type string returns number, W is a placeholder for string
 }
 
-const getStats = ():Stats=> {
-  const stats = localStorage.getItem("tictactoestats");
-  console.log("gettin stats")
+const getStats = ():statObject=> {
+  const stats:any = localStorage.getItem("tictactoestats");
   if (stats === null){
     localStorage.setItem("tictactoestats",JSON.stringify({'W':0, 'L':0, 'D':0}));
     return {W:0, L:0, D:0};
@@ -32,97 +28,99 @@ const getStats = ():Stats=> {
   }
 }
 
+const o:string = "o";
+const x:string = "x";
+
 export enum RESULT {UNKNOWN, WON, LOST, DRAW};
 
-const initialState = {
-  score:0,
-  turn:"x",
-  game:["","","","","","","","",""],
-  count:0,
-  stats:getStats,
-  isPlaying:true,
+type game = {
+  turn:string,
+  board: Array<string>,
+  playCount:number,
+  result: RESULT
+}
+const initialGame:game = {
+  turn:x,
+  board:["","","","","","","","",""],
+  playCount:0,
+  result: RESULT.UNKNOWN
 }
 
-
-type State = Readonly<typeof initialState>;
+const gameReducer = (oldGame:game,action:any):game => ({...oldGame,...action});
 
 function App() {
-  const [state, setState] = useState(initialState);
-  const [result, setResult] = useState(RESULT.UNKNOWN);
-  const nextTurn = () => {
-    setState({score:state.score, turn: state.turn=="o"?"x":"o", game:state.game, count:state.count+1, stats: state.stats, isPlaying:true});
-  }
-
-  const checkWin = () => {
-    const winningSets = [[0,1,2], [3,4,5], [6,7,8],[0,3,6], [1,4,7], [2,5,8],[0,4,8], [2,4,6]];
-    for(let i = 0; i<winningSets.length; i++){
-      if(state.game[winningSets[i][0]] =="" || state.game[winningSets[i][1]] =="" || state.game[winningSets[i][2]] =="" ) continue;
-      else if (state.game[winningSets[i][0]] == state.game[winningSets[i][1]] && state.game[winningSets[i][1]]== state.game[winningSets[i][2]]) {
-        return [true,state.game[winningSets[i][0]]];
-      }
-    }
-    return [false,null];
-  }
-
-  const updateStats = ( key:string ) => {
-    const oldStat = state.stats();
-    const newStat = {...oldStat, [key]:oldStat[`${key}`]+1}
-    localStorage.setItem("tictactoestats",JSON.stringify(newStat))
-  }
-
+  const [stats, setStats] = useState(()=>getStats());
+  const [game, setGame] = useReducer(gameReducer,JSON.parse(JSON.stringify(initialGame)));  
+  
+  console.log("Rendered")
   const restartGame = () => {
-    const emptyState = {
-      score:0,
-      turn:"x",
-      game:["","","","","","","","",""],
-      count:0,
-      isPlaying:true
-    }
-    setState({score:emptyState.score, turn: emptyState.turn, game:emptyState.game, count:emptyState.count, stats:getStats, isPlaying: emptyState.isPlaying});
-    setResult(RESULT.UNKNOWN)
+    setGame(JSON.parse(JSON.stringify(initialGame)));
   }
-
-  const setSpace = (space:number) => {
-    const newGame = state.game;
-    newGame[space] = state.turn;
-    const check = checkWin();
-    if(check[0]){
-      if(check[1] == "x") {updateStats("W");setResult(RESULT.WON)}
-      else if (check[1] == "o") {updateStats("L");setResult(RESULT.LOST)}
-      console.log("here");
-      setState({score:state.score, turn: state.turn, game:state.game, count:state.count, stats:getStats, isPlaying: false});
+  
+  const playTurn =  useCallback((space: number) =>{
+    const gameBoard = game.board;
+    gameBoard[space] = game.turn;
+    setGame({turn: game.turn===o?x:o,board:gameBoard,playCount:game.playCount+1});
+    
+    const checkBoard = () => {
+      const winningSets = [[0,1,2], [3,4,5], [6,7,8],[0,3,6], [1,4,7], [2,5,8],[0,4,8], [2,4,6]];
+      for(let i = 0; i<winningSets.length; i++){
+        if(game.board[winningSets[i][0]] =="" || game.board[winningSets[i][1]] =="" || game.board[winningSets[i][2]] =="" ) continue;
+        else if (game.board[winningSets[i][0]] == game.board[winningSets[i][1]] && 
+                game.board[winningSets[i][1]]== game.board[winningSets[i][2]]) return [true,game.board[winningSets[i][0]]];
+      }
+      return [false,null];
     }
-    else if(state.count>=8){
-      updateStats("D");
-      setResult(RESULT.DRAW)
-      setState({score:state.score, turn: state.turn, game:state.game, count:state.count, stats:getStats, isPlaying: false});
+    const checkWin = () => {
+      if(game.playCount>4){
+        const check = checkBoard();
+        let result = RESULT.UNKNOWN;
+        if(check[0]){
+          if(check[1]===x){
+            updateStats("W");
+            result = RESULT.WON;
+          }
+          else{
+            updateStats("L");
+            result = RESULT.LOST;
+          }
+          setGame({result});
+          return true;
+        }
+        else if(game.playCount>=8){
+          updateStats("D");
+          setGame({result:RESULT.DRAW});
+          return true;
+        }
+      }
+      return false;
     }
-    else{
-      nextTurn();
+    const updateStats = ( key:string ) => {
+      const newStat:statObject = {...stats, [key]:stats[key]+1}
+      setStats(newStat);
+      localStorage.setItem("tictactoestats",JSON.stringify(newStat))
     }
-  }
-
-  const autoPlay = () => {
-    if(state.turn==="o" && state.isPlaying){
+    checkWin()
+  },[game.board, game.playCount, game.turn,stats]);
+  
+  useEffect(()=> {
+     if(game.turn===o && game.result===RESULT.UNKNOWN){
       let valid = false;
       while (!valid){
         let box = Math.floor(Math.random()*10);
-        if(state.game[box]===""){
+        if(game.board[box]===""){
           valid = true;
-          setTimeout(()=>setSpace(box),Math.random()* 1000);
+          setTimeout(()=>playTurn(box),Math.random()* 1000);
           break
         }
       }
     }
-  }
-  useEffect(()=> {
-    autoPlay();
-  },[state])
+  },[game.board, game.result, game.turn, playTurn])
   return (
     <div style={appStyle as React.CSSProperties} className="App">
-      <Header stats={state.stats} turn = {[state.turn, result]}/>
-      <Board gameState={state} nextTurn={nextTurn} setSpace={setSpace}/>
-      <Footer visibility={state.isPlaying} replay={restartGame}/>
+      <Header stats={stats} turn = {[game.turn, game.result]}/>
+      <Board board={game.board} setSpace={playTurn} canPlay={game.turn===x && game.result===RESULT.UNKNOWN}/>
+      <Footer visibility={game.result===RESULT.UNKNOWN} replay={restartGame}/>
     </div>
   );
 }
