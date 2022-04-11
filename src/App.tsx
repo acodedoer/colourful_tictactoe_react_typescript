@@ -1,9 +1,7 @@
-import React, {useEffect, useRef, useState} from 'react';
-import logo from './logo.svg';
+import React, {useEffect,useState} from 'react';
 import Board from './Board';
 import Header from './Header';
 import Footer from './Footer';
-import './App.css';
 import Stats from './Stats';
 
 const appStyle = {
@@ -20,24 +18,21 @@ interface Stats {
   [d:string]:number,
   [l:string]: number
 }
+
 const getStats = ():Stats=> {
-  const w = localStorage.getItem("tictactoestats_w");
-  const d = localStorage.getItem("tictactoestats_d");
-  const l = localStorage.getItem("tictactoestats_l");
-  if (w === null || d === null || l === null){
-    localStorage.setItem("tictactoestats_w","0");
-    localStorage.setItem("tictactoestats_d","0");
-    localStorage.setItem("tictactoestats_l","0");
-    return {w:0, d:0, l:0};
+  const stats = localStorage.getItem("tictactoestats");
+  console.log("gettin stats")
+  if (stats === null){
+    localStorage.setItem("tictactoestats",JSON.stringify({'W':0, 'L':0, 'D':0}));
+    return {W:0, L:0, D:0};
   }
   else{
-    const stats = {w:parseInt(w), d:parseInt(d), l:parseInt(l)}
-    return stats;
+    const statsObj = JSON.parse(stats);
+    return statsObj;
   }
 }
 
 export enum RESULT {UNKNOWN, WON, LOST, DRAW};
-const stats = getStats();
 
 const initialState = {
   score:0,
@@ -52,7 +47,6 @@ const initialState = {
 type State = Readonly<typeof initialState>;
 
 function App() {
-
   const [state, setState] = useState(initialState);
   const [result, setResult] = useState(RESULT.UNKNOWN);
   const nextTurn = () => {
@@ -72,11 +66,10 @@ function App() {
 
   const updateStats = ( key:string ) => {
     const oldStat = state.stats();
-    oldStat[key]+=1;
-    const localStorageKey = "tictactoestats_"+key;
-    localStorage.setItem(localStorageKey,String(oldStat[key]))
-    console.log(state.stats()) 
+    const newStat = {...oldStat, [key]:oldStat[`${key}`]+1}
+    localStorage.setItem("tictactoestats",JSON.stringify(newStat))
   }
+
   const restartGame = () => {
     const emptyState = {
       score:0,
@@ -90,17 +83,17 @@ function App() {
   }
 
   const setSpace = (space:number) => {
-
     const newGame = state.game;
     newGame[space] = state.turn;
     const check = checkWin();
     if(check[0]){
-      if(check[1] == "x") {updateStats("w");setResult(RESULT.WON)}
-      else if (check[1] == "o") {updateStats("l");setResult(RESULT.LOST)}
+      if(check[1] == "x") {updateStats("W");setResult(RESULT.WON)}
+      else if (check[1] == "o") {updateStats("L");setResult(RESULT.LOST)}
+      console.log("here");
       setState({score:state.score, turn: state.turn, game:state.game, count:state.count, stats:getStats, isPlaying: false});
     }
     else if(state.count>=8){
-      updateStats("d");
+      updateStats("D");
       setResult(RESULT.DRAW)
       setState({score:state.score, turn: state.turn, game:state.game, count:state.count, stats:getStats, isPlaying: false});
     }
@@ -109,19 +102,22 @@ function App() {
     }
   }
 
-  useEffect(()=> {
-    if(state.turn=="o"){
+  const autoPlay = () => {
+    if(state.turn==="o" && state.isPlaying){
       let valid = false;
       while (!valid){
         let box = Math.floor(Math.random()*10);
-        if(state.game[box]==""){
+        if(state.game[box]===""){
           valid = true;
           setTimeout(()=>setSpace(box),Math.random()* 1000);
           break
         }
       }
     }
-  },[state.turn])
+  }
+  useEffect(()=> {
+    autoPlay();
+  },[state])
   return (
     <div style={appStyle as React.CSSProperties} className="App">
       <Header stats={state.stats} turn = {[state.turn, result]}/>
