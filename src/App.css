@@ -1,0 +1,14 @@
+@media screen and (max-width: 680px) {
+    #head {
+      flex-direction: column !important;
+    }
+
+    #board{
+        width: 36vh !important;
+        height: 36vh !important;
+    }
+    #space{
+        width: 10vh !important;
+        height: 10vh !important;
+    }
+  }

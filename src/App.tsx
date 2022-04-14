@@ -72,7 +72,7 @@ function App() {
       return [false,null];
     }
     const checkWin = () => {
-      if(game.playCount>4){
+      if(game.playCount>3){
         const check = checkBoard();
         let result = RESULT.UNKNOWN;
         if(check[0]){
@@ -104,6 +104,7 @@ function App() {
   },[game.board, game.playCount, game.turn,stats]);
   
   useEffect(()=> {
+    console.log(game.result)
      if(game.turn===o && game.result===RESULT.UNKNOWN){
       let valid = false;
       while (!valid){
